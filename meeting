@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Minutes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl mx-auto border-t-8 border-blue-500">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800">Electricity Market Operations Unit</h1>
+            <p class="mt-2 text-gray-600">Meeting Notes</p>
+        </div>
+
+        <!-- Form Section -->
+        <div class="space-y-6">
+            <!-- Meeting Details -->
+            <div class="grid sm:grid-cols-2 gap-6">
+                <!-- Title -->
+                <div>
+                    <label for="meeting-title" class="block text-sm font-medium text-gray-700 mb-1">Meeting Title</label>
+                    <input type="text" id="meeting-title" placeholder="Project Alpha Kick-off" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                </div>
+                <!-- Date -->
+                <div>
+                    <label for="meeting-date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="meeting-date" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                </div>
+            </div>
+
+            <!-- Attendees -->
+            <div>
+                <label for="attendees" class="block text-sm font-medium text-gray-700 mb-1">Attendees</label>
+                <input type="text" id="attendees" placeholder="John, Jane, Sarah" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+            </div>
+
+            <!-- Agenda -->
+            <div>
+                <label for="agenda" class="block text-sm font-medium text-gray-700 mb-1">Agenda</label>
+                <textarea id="agenda" rows="4" placeholder="1. Review Q3 performance&#10;2. Discuss new marketing strategy&#10;3. AOB" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"></textarea>
+            </div>
+
+            <!-- Discussion & Action Items -->
+            <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Discussion & Action Items</label>
+                <textarea id="notes" rows="8" placeholder="Start typing your minutes here..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"></textarea>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-8 flex flex-col sm:flex-row justify-end items-center gap-4">
+            <button id="save-pdf" class="w-full sm:w-auto px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-300">
+                Save as PDF
+            </button>
+            <button id="send-email" class="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-300">
+                Send via Email
+            </button>
+            <button id="send-whatsapp" class="w-full sm:w-auto px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-300">
+                Send to WhatsApp
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals for feedback -->
+    <div id="modal-container" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm text-center">
+            <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
+            <p id="modal-message" class="text-gray-700 mb-6"></p>
+            <button id="close-modal" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Close</button>
+        </div>
+    </div>
+
+    <!-- JS for functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Set the default date to today's date
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('meeting-date').value = today;
+        };
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal-container').classList.remove('hidden');
+        }
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('modal-container').classList.add('hidden');
+        });
+
+        // Helper function to get the full note content
+        function getNoteContent() {
+            const title = document.getElementById('meeting-title').value || 'Untitled Meeting';
+            const date = document.getElementById('meeting-date').value;
+            const attendees = document.getElementById('attendees').value || 'Not specified';
+            const agenda = document.getElementById('agenda').value || 'No agenda provided.';
+            const notes = document.getElementById('notes').value || 'No notes taken.';
+
+            return `Meeting Minutes: ${title}\n\nDate: ${date}\nAttendees: ${attendees}\nAgenda:\n${agenda}\n\nDiscussion & Action Items:\n${notes}`;
+        }
+
+        // Save as PDF functionality
+        document.getElementById('save-pdf').addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const margin = 20;
+            let y = margin;
+            
+            // Set font for the entire document
+            doc.setFont('helvetica');
+
+            // Header Section
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Electricity Market Operations Unit", margin, y);
+            y += 10;
+            doc.setFontSize(16);
+            doc.text("Meeting Notes", margin, y);
+            y += 20;
+
+            // Meeting Details
+            const title = document.getElementById('meeting-title').value || 'Not specified';
+            const date = document.getElementById('meeting-date').value;
+            const attendees = document.getElementById('attendees').value || 'Not specified';
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Meeting Title:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(title, margin, y);
+            y += 10;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Date:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(date, margin, y);
+            y += 10;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Attendees:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(attendees, margin, y);
+            y += 15;
+
+            // Agenda Section
+            const agendaText = document.getElementById('agenda').value || 'No agenda provided.';
+            doc.setFont('helvetica', 'bold');
+            doc.text('Agenda:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            const agendaLines = doc.splitTextToSize(agendaText, 170);
+            doc.text(agendaLines, margin, y);
+            y += (agendaLines.length * 6) + 10;
+
+            // Discussion & Action Items Section
+            const notesText = document.getElementById('notes').value || 'No notes taken.';
+            doc.setFont('helvetica', 'bold');
+            doc.text('Discussion & Action Items:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            const notesLines = doc.splitTextToSize(notesText, 170);
+            doc.text(notesLines, margin, y);
+            y += (notesLines.length * 6) + 10;
+            
+            // Save the PDF
+            doc.save(`${title.replace(/ /g, '_')}_minutes.pdf`);
+            showModal('Success!', 'Your meeting minutes have been saved as a PDF.');
+        });
+
+        // Send via Email functionality
+        document.getElementById('send-email').addEventListener('click', () => {
+            const noteContent = getNoteContent();
+            const subject = encodeURIComponent('Meeting Minutes');
+            const body = encodeURIComponent(noteContent);
+            const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
+            window.location.href = mailtoUrl;
+
+            showModal('Email Drafted', 'Your email client should have opened with the meeting minutes. Please send it manually.');
+        });
+
+        // Send to WhatsApp functionality
+        document.getElementById('send-whatsapp').addEventListener('click', () => {
+            const noteContent = getNoteContent();
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(noteContent)}`;
+            window.open(whatsappUrl, '_blank');
+
+            showModal('WhatsApp Drafted', 'A new window or tab has opened. Please select a contact and send your message manually.');
+        });
+    </script>
+</body>
+</html>
