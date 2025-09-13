@@ -6,7 +6,6 @@
     <title>Meeting Minutes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -18,7 +17,7 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
     <!-- Main Container -->
-    <div id="content-to-capture" class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl mx-auto border-t-8 border-blue-500">
+    <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-4xl mx-auto border-t-8 border-blue-500">
         <div class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800">Electricity Market Operations Unit</h1>
             <p class="mt-2 text-gray-600">Meeting Notes</p>
@@ -124,34 +123,84 @@
         // Save as PDF functionality
         document.getElementById('save-pdf').addEventListener('click', () => {
             const { jsPDF } = window.jspdf;
-            const content = document.getElementById('content-to-capture');
-
-            showModal('Generating PDF', 'Please wait while we create your document...');
+            const doc = new jsPDF();
+            const margin = 20;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const textWidth = pageWidth - 2 * margin;
+            let y = margin;
             
-            html2canvas(content, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgWidth = 210; // A4 width in mm
-                const pageHeight = 297; // A4 height in mm
-                const imgHeight = canvas.height * imgWidth / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
+            // Set global font settings
+            doc.setFont('helvetica');
 
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+            // --- Header Section ---
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Electricity Market Operations Unit", margin, y);
+            y += 8;
+            doc.setFontSize(14);
+            doc.text("Meeting Notes", margin, y);
+            y += 20;
 
-                while (heightLeft > 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                
-                const title = document.getElementById('meeting-title').value || 'Untitled Meeting';
-                pdf.save(`${title.replace(/ /g, '_')}_minutes.pdf`);
-                document.getElementById('modal-container').classList.add('hidden');
-                showModal('Success!', 'Your PDF has been saved!');
-            });
+            // --- Meeting Details Section ---
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Meeting Title:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(document.getElementById('meeting-title').value || 'Not specified', margin, y);
+            y += 10;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Date:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(document.getElementById('meeting-date').value || 'Not specified', margin, y);
+            y += 10;
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text('Venue:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(document.getElementById('venue').value || 'Not specified', margin, y);
+            y += 10;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Attendees:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            doc.text(document.getElementById('attendees').value || 'Not specified', margin, y);
+            y += 15;
+
+            // --- Agenda & Discussion Section ---
+            const agendaDiscussionText = document.getElementById('agenda-discussion').value || 'No agenda or discussion provided.';
+            doc.setFont('helvetica', 'bold');
+            doc.text('Agenda & Discussion:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            const agendaDiscussionLines = doc.splitTextToSize(agendaDiscussionText, textWidth);
+            doc.text(agendaDiscussionLines, margin, y);
+            y += (agendaDiscussionLines.length * 6) + 10;
+
+            // --- Action Items Section ---
+            const actionItemsText = document.getElementById('action-items').value || 'No action items.';
+            doc.setFont('helvetica', 'bold');
+            doc.text('Action Items:', margin, y);
+            doc.setFont('helvetica', 'normal');
+            y += 6;
+            const actionItemsLines = doc.splitTextToSize(actionItemsText, textWidth);
+            doc.text(actionItemsLines, margin, y);
+            y += (actionItemsLines.length * 6) + 10;
+
+            // Add new pages if content overflows
+            if (y > doc.internal.pageSize.getHeight() - margin) {
+                doc.addPage();
+                y = margin;
+            }
+            
+            // Save the PDF
+            const title = document.getElementById('meeting-title').value || 'Untitled Meeting';
+            doc.save(`${title.replace(/ /g, '_')}_minutes.pdf`);
+            showModal('Success!', 'Your meeting minutes have been saved as a PDF.');
         });
 
         // Send via Email functionality
